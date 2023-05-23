@@ -1,10 +1,10 @@
 resource "aws_instance" "this" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t2.small"
-  vpc_security_group_ids      = [aws_security_group.master.id]
-  subnet_id                   = aws_subnet.public.id
-  key_name                    = "tf-key-pair"
-  user_data                   = file("web_init.sh")
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t2.small"
+  vpc_security_group_ids = [aws_security_group.master.id]
+  subnet_id              = aws_subnet.public.id
+  key_name               = "tf-key-pair"
+  user_data              = file("web_init.sh")
   tags = {
     Name = "web"
   }
@@ -19,8 +19,8 @@ resource "tls_private_key" "rsa" {
   rsa_bits  = 4096
 }
 resource "local_file" "tf-key" {
-  content  = tls_private_key.rsa.private_key_pem
-  filename = "tf-key-pair.pem"
+  content         = tls_private_key.rsa.private_key_pem
+  filename        = "tf-key-pair.pem"
   file_permission = "0600"
 }
 
@@ -84,6 +84,13 @@ resource "aws_cloudfront_distribution" "this" {
       }
     }
   }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+  
   tags = {
     Environment = var.env
   }
