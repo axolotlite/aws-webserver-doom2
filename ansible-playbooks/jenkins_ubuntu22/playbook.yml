@@ -1,0 +1,37 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+  
+  tasks:
+    - name: Install java
+      apt: 
+        pkg:
+          - openjdk-11-jdk
+        update_cache: yes
+
+    - name: add jenkins keys
+      shell: wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+
+    - name: add jenkins repo
+      shell: sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+      become: true
+
+    - name: install jenkins
+      apt:
+        pkg:
+          - jenkins
+        update_cache: yes
+    - name: "UFW - Allow Jenkins port access"
+      ufw:
+        rule: allow
+        port: "{{ jenkins_port }}"
+        proto: tcp
+    - name: get jenkins Administrator password
+      shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+      become: true
+      register: admin_password
+  post_tasks:
+    - debug:
+        msg: "Jenkins admin password: {{ admin_password.stdout }}"

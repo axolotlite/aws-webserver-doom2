@@ -1,12 +1,27 @@
 resource "aws_instance" "this" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.small"
-  vpc_security_group_ids = [aws_security_group.master.id]
-  subnet_id              = aws_subnet.public.id
-  key_name               = "tf-key-pair"
-  user_data              = file("web_init.sh")
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t2.small"
+  vpc_security_group_ids      = [aws_security_group.master.id]
+  subnet_id                   = aws_subnet.public.id
+  key_name                    = "tf-key-pair"
+  # user_data                   = file("web_init.sh")
   tags = {
     Name = "web"
+  }
+  
+  provisioner "remote-exec" {
+    inline = ["sudo apt update"]
+
+    connection {
+      host        = self.public_ip
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = tls_private_key.rsa.private_key_pem
+    }
+  }
+
+  provisioner "local-exec" {
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -u ubuntu -i '${self.public_ip},' --private-key 'tf-key-pair.pem' -e 'pub_key=${aws_key_pair.tf-key-pair.public_key}' ansible-playbooks/lemp_ubuntu1804/playbook.yml"
   }
 }
 
@@ -19,9 +34,9 @@ resource "tls_private_key" "rsa" {
   rsa_bits  = 4096
 }
 resource "local_file" "tf-key" {
-  content         = tls_private_key.rsa.private_key_pem
-  filename        = "tf-key-pair.pem"
-  file_permission = "0600"
+  content  = tls_private_key.rsa.private_key_pem
+  filename = "${path.module}/tf-key-pair.pem"
+  file_permission = "0400"
 }
 
 resource "aws_volume_attachment" "this" {
@@ -84,13 +99,11 @@ resource "aws_cloudfront_distribution" "this" {
       }
     }
   }
-
   restrictions {
     geo_restriction {
       restriction_type = "none"
     }
   }
-  
   tags = {
     Environment = var.env
   }
