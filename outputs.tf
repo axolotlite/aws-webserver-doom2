@@ -1,3 +1,3 @@
-# output "ipv4_address" {
-#   value = aws_instance.this.public_ip
-# }
+output "elb_address" {
+  value = aws_elb.this.dns_name
+}

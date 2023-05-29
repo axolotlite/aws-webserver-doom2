@@ -4,7 +4,7 @@
 #   vpc_security_group_ids      = [aws_security_group.master.id]
 #   subnet_id                   = aws_subnet.public.id
 #   key_name                    = "tf-key-pair"
-#   # user_data                   = file("web_init.sh")
+#   # user_data                   = file("scripts/web_init.sh")
 #   tags = {
 #     Name = "web"
 #   }
@@ -74,40 +74,40 @@ resource "local_file" "tf-key" {
 #   skip_final_snapshot  = true
 # }
 
-# resource "aws_cloudfront_distribution" "this" {
-#   enabled = true
-#   origin {
-#     domain_name = aws_instance.this.public_dns
-#     origin_id   = aws_instance.this.public_dns
-#     custom_origin_config {
-#       http_port              = 80
-#       https_port             = 443
-#       origin_protocol_policy = "http-only"
-#       origin_ssl_protocols   = ["TLSv1.2"]
-#     }
-#   }
-#   default_cache_behavior {
-#     allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-#     cached_methods         = ["GET", "HEAD", "OPTIONS"]
-#     target_origin_id       = aws_instance.this.public_dns
-#     viewer_protocol_policy = "redirect-to-https" # other options - https only, http
-#     forwarded_values {
-#       headers      = []
-#       query_string = true
-#       cookies {
-#         forward = "all"
-#       }
-#     }
-#   }
-#   restrictions {
-#     geo_restriction {
-#       restriction_type = "none"
-#     }
-#   }
-#   tags = {
-#     Environment = var.env
-#   }
-#   viewer_certificate {
-#     cloudfront_default_certificate = true
-#   }
-# }
+resource "aws_cloudfront_distribution" "this" {
+  enabled = true
+  origin {
+    domain_name = aws_elb.this.dns_name
+    origin_id   = aws_elb.this.dns_name
+    custom_origin_config {
+      http_port              = var.default_port
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = aws_elb.this.dns_name
+    viewer_protocol_policy = "redirect-to-https" # other options - https only, http
+    forwarded_values {
+      headers      = []
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
+  }
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+  tags = {
+    Environment = var.env
+  }
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
