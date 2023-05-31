@@ -21,6 +21,7 @@ resource "aws_autoscaling_group" "this" {
   launch_configuration = aws_launch_configuration.this.name
   vpc_zone_identifier = [aws_subnet.public.id]  # Replace with your desired subnet ID(s)
   load_balancers = [aws_elb.this.id]
+  depends_on = [ aws_s3_bucket.build_bucket ]
 }
 
 # Create an Elastic Load Balancer
@@ -43,4 +44,5 @@ resource "aws_elb" "this" {
     timeout             = 5
     interval            = 30
   }
+  depends_on = [ aws_s3_bucket.build_bucket ]
 }
