@@ -15,3 +15,9 @@ variable "default_port" {
   type = number
   default = 8000
 }
+
+variable "build_directory" {
+  description = "The directory containing the build files"
+  type        = string
+  default     = "./build_dir"
+}
