@@ -5,7 +5,7 @@ resource "aws_launch_configuration" "this" {
   instance_type = "t2.small"
   key_name = "tf-key-pair"
   security_groups = [aws_security_group.master.id]
-  user_data = file("scripts/docker_init.sh")
+  user_data = data.template_file.npm_app.rendered
 
   lifecycle {
     create_before_destroy = true
@@ -21,7 +21,7 @@ resource "aws_autoscaling_group" "this" {
   launch_configuration = aws_launch_configuration.this.name
   vpc_zone_identifier = [aws_subnet.public.id]  # Replace with your desired subnet ID(s)
   load_balancers = [aws_elb.this.id]
-  depends_on = [ aws_s3_bucket.build_bucket ]
+  depends_on = [ aws_s3_bucket.build_bucket, aws_s3_bucket_object.build_archive ]
 }
 
 # Create an Elastic Load Balancer
@@ -44,5 +44,5 @@ resource "aws_elb" "this" {
     timeout             = 5
     interval            = 30
   }
-  depends_on = [ aws_s3_bucket.build_bucket ]
+  depends_on = [ aws_s3_bucket.build_bucket, aws_s3_bucket_object.build_archive ]
 }
